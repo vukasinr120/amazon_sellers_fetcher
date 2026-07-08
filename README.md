@@ -67,7 +67,7 @@ Default Azure settings:
 Resource group: etl-containerapps
 Container Apps environment: env-etl-containerapps
 Schedule: 0 6 * * * UTC
-RUN_STEPS: sync_accounts,sync_marketplaces,ingest_orders,ingest_listings,ingest_inventory,ingest_finances,ingest_reports,build_reporting
+RUN_STEPS: not set, so the app runs all code-defined steps
 ```
 
 Required GitHub repository secrets:
@@ -83,4 +83,10 @@ AMAZON_LWA_CLIENT_SECRET
 AMAZON_TITANCARDS_REFRESH_TOKEN
 AMAZON_TITANCARDS_SELLER_ID
 AMAZON_ACCOUNTS_JSON
+```
+
+Optional GitHub repository secrets:
+
+```text
+SLACK_WEBHOOK_URL
 ```
