@@ -1,0 +1,139 @@
+name: Build and Deploy Amazon Sellers Fetcher
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  ACR_NAME: voonixacr
+  IMAGE_NAME: amazon-sellers-fetcher
+  RESOURCE_GROUP: etl-containerapps
+  CONTAINER_APP_ENV: env-etl-containerapps
+  JOB_NAME: amazon-sellers-fetcher-daily
+  JOB_CRON: "0 6 * * *"
+  REPLICA_TIMEOUT: "3600"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to Azure Container Registry
+        run: az acr login --name "$ACR_NAME"
+
+      - name: Build Docker image
+        run: |
+          TAG=$(echo "$GITHUB_SHA" | head -c 7)
+          docker build -t "$ACR_NAME.azurecr.io/$IMAGE_NAME:$TAG" .
+          echo "IMAGE_TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Push Docker image
+        run: docker push "$ACR_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG"
+
+      - name: Read ACR credentials
+        run: |
+          echo "ACR_USERNAME=$(az acr credential show --name "$ACR_NAME" --query username -o tsv)" >> "$GITHUB_ENV"
+          echo "ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query 'passwords[0].value' -o tsv)" >> "$GITHUB_ENV"
+
+      - name: Create or update Container App Job
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            set -euo pipefail
+
+            IMAGE="$ACR_NAME.azurecr.io/$IMAGE_NAME:$IMAGE_TAG"
+
+            if az containerapp job show \
+              --name "$JOB_NAME" \
+              --resource-group "$RESOURCE_GROUP" \
+              >/dev/null 2>&1; then
+              az containerapp job registry set \
+                --name "$JOB_NAME" \
+                --resource-group "$RESOURCE_GROUP" \
+                --server "$ACR_NAME.azurecr.io" \
+                --username "$ACR_USERNAME" \
+                --password "$ACR_PASSWORD"
+
+              az containerapp job secret set \
+                --name "$JOB_NAME" \
+                --resource-group "$RESOURCE_GROUP" \
+                --secrets \
+                  sql-server="${{ secrets.SQL_SERVER }}" \
+                  sql-database="${{ secrets.SQL_DATABASE }}" \
+                  sql-username="${{ secrets.SQL_USERNAME }}" \
+                  sql-password="${{ secrets.SQL_PASSWORD }}" \
+                  amazon-lwa-client-id="${{ secrets.AMAZON_LWA_CLIENT_ID }}" \
+                  amazon-lwa-client-secret="${{ secrets.AMAZON_LWA_CLIENT_SECRET }}" \
+                  amazon-titancards-refresh-token="${{ secrets.AMAZON_TITANCARDS_REFRESH_TOKEN }}" \
+                  amazon-titancards-seller-id="${{ secrets.AMAZON_TITANCARDS_SELLER_ID }}"
+
+              az containerapp job update \
+                --name "$JOB_NAME" \
+                --resource-group "$RESOURCE_GROUP" \
+                --image "$IMAGE" \
+                --cron-expression "$JOB_CRON" \
+                --replica-timeout "$REPLICA_TIMEOUT" \
+                --replica-retry-limit 0 \
+                --parallelism 1 \
+                --replica-completion-count 1 \
+                --cpu 1.0 \
+                --memory 2.0Gi \
+                --set-env-vars \
+                  SQL_SERVER=secretref:sql-server \
+                  SQL_DATABASE=secretref:sql-database \
+                  SQL_USERNAME=secretref:sql-username \
+                  SQL_PASSWORD=secretref:sql-password \
+                  SQL_DRIVER="ODBC Driver 17 for SQL Server" \
+                  AMAZON_LWA_CLIENT_ID=secretref:amazon-lwa-client-id \
+                  AMAZON_LWA_CLIENT_SECRET=secretref:amazon-lwa-client-secret \
+                  AMAZON_TITANCARDS_REFRESH_TOKEN=secretref:amazon-titancards-refresh-token \
+                  AMAZON_TITANCARDS_SELLER_ID=secretref:amazon-titancards-seller-id \
+                  RUN_STEPS=sync_accounts,sync_marketplaces,ingest_orders
+            else
+              az containerapp job create \
+                --name "$JOB_NAME" \
+                --resource-group "$RESOURCE_GROUP" \
+                --environment "$CONTAINER_APP_ENV" \
+                --trigger-type Schedule \
+                --cron-expression "$JOB_CRON" \
+                --replica-timeout "$REPLICA_TIMEOUT" \
+                --replica-retry-limit 0 \
+                --parallelism 1 \
+                --replica-completion-count 1 \
+                --cpu 1.0 \
+                --memory 2.0Gi \
+                --image "$IMAGE" \
+                --registry-server "$ACR_NAME.azurecr.io" \
+                --registry-username "$ACR_USERNAME" \
+                --registry-password "$ACR_PASSWORD" \
+                --secrets \
+                  sql-server="${{ secrets.SQL_SERVER }}" \
+                  sql-database="${{ secrets.SQL_DATABASE }}" \
+                  sql-username="${{ secrets.SQL_USERNAME }}" \
+                  sql-password="${{ secrets.SQL_PASSWORD }}" \
+                  amazon-lwa-client-id="${{ secrets.AMAZON_LWA_CLIENT_ID }}" \
+                  amazon-lwa-client-secret="${{ secrets.AMAZON_LWA_CLIENT_SECRET }}" \
+                  amazon-titancards-refresh-token="${{ secrets.AMAZON_TITANCARDS_REFRESH_TOKEN }}" \
+                  amazon-titancards-seller-id="${{ secrets.AMAZON_TITANCARDS_SELLER_ID }}" \
+                --env-vars \
+                  SQL_SERVER=secretref:sql-server \
+                  SQL_DATABASE=secretref:sql-database \
+                  SQL_USERNAME=secretref:sql-username \
+                  SQL_PASSWORD=secretref:sql-password \
+                  SQL_DRIVER="ODBC Driver 17 for SQL Server" \
+                  AMAZON_LWA_CLIENT_ID=secretref:amazon-lwa-client-id \
+                  AMAZON_LWA_CLIENT_SECRET=secretref:amazon-lwa-client-secret \
+                  AMAZON_TITANCARDS_REFRESH_TOKEN=secretref:amazon-titancards-refresh-token \
+                  AMAZON_TITANCARDS_SELLER_ID=secretref:amazon-titancards-seller-id \
+                  RUN_STEPS=sync_accounts,sync_marketplaces,ingest_orders
+            fi

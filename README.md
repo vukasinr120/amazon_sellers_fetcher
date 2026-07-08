@@ -56,3 +56,29 @@ Optional report types:
 ```bash
 AMAZON_REPORT_TYPES=GET_FLAT_FILE_ALL_ORDERS_DATA_BY_ORDER_DATE_GENERAL,GET_V2_SETTLEMENT_REPORT_DATA_FLAT_FILE
 ```
+
+## CI/CD deployment
+
+GitHub Actions builds the Docker image, pushes it to `voonixacr.azurecr.io/amazon-sellers-fetcher`, and creates or updates the Azure Container Apps Job `amazon-sellers-fetcher-daily`.
+
+Default Azure settings:
+
+```text
+Resource group: etl-containerapps
+Container Apps environment: env-etl-containerapps
+Schedule: 0 6 * * * UTC
+```
+
+Required GitHub repository secrets:
+
+```text
+AZURE_CREDENTIALS
+SQL_SERVER
+SQL_DATABASE
+SQL_USERNAME
+SQL_PASSWORD
+AMAZON_LWA_CLIENT_ID
+AMAZON_LWA_CLIENT_SECRET
+AMAZON_TITANCARDS_REFRESH_TOKEN
+AMAZON_TITANCARDS_SELLER_ID
+```
