@@ -157,8 +157,5 @@ jobs:
                 --resource-group "$RESOURCE_GROUP" \
                 --set-env-vars SLACK_WEBHOOK_URL=secretref:slack-webhook-url
             else
-              az containerapp job update \
-                --name "$JOB_NAME" \
-                --resource-group "$RESOURCE_GROUP" \
-                --remove-env-vars SLACK_WEBHOOK_URL || true
+              echo "SLACK_WEBHOOK_URL GitHub secret is not set; preserving any existing Azure setting."
             fi
