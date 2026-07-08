@@ -67,6 +67,7 @@ Default Azure settings:
 Resource group: etl-containerapps
 Container Apps environment: env-etl-containerapps
 Schedule: 0 6 * * * UTC
+RUN_STEPS: sync_accounts,sync_marketplaces,ingest_orders,ingest_listings,ingest_inventory,ingest_finances,ingest_reports,build_reporting
 ```
 
 Required GitHub repository secrets:

@@ -100,7 +100,7 @@ jobs:
                   AMAZON_TITANCARDS_REFRESH_TOKEN=secretref:amazon-titancards-refresh-token \
                   AMAZON_TITANCARDS_SELLER_ID=secretref:amazon-titancards-seller-id \
                   AMAZON_ACCOUNTS_JSON=secretref:amazon-accounts-json \
-                  RUN_STEPS=sync_accounts,sync_marketplaces,ingest_orders
+                  RUN_STEPS=sync_accounts,sync_marketplaces,ingest_orders,ingest_listings,ingest_inventory,ingest_finances,ingest_reports,build_reporting
             else
               az containerapp job create \
                 --name "$JOB_NAME" \
@@ -139,5 +139,5 @@ jobs:
                   AMAZON_TITANCARDS_REFRESH_TOKEN=secretref:amazon-titancards-refresh-token \
                   AMAZON_TITANCARDS_SELLER_ID=secretref:amazon-titancards-seller-id \
                   AMAZON_ACCOUNTS_JSON=secretref:amazon-accounts-json \
-                  RUN_STEPS=sync_accounts,sync_marketplaces,ingest_orders
+                  RUN_STEPS=sync_accounts,sync_marketplaces,ingest_orders,ingest_listings,ingest_inventory,ingest_finances,ingest_reports,build_reporting
             fi
