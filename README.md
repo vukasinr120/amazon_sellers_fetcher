@@ -15,7 +15,7 @@ The pipeline is account-config driven. Add future Amazon accounts to `AMAZON_ACC
 - Raw landing rows are deleted and reloaded by `AccountID + MarketplaceID + ObjectType + SourceUpdatedAt date range`.
 - Account-level report rows are deleted and reloaded by `AccountID + ObjectType + SourceUpdatedAt date range`.
 - Clean/fact/report tables should be rebuilt from raw payloads by `AccountID + business date range`.
-- Dimensions are upserted by Amazon native IDs.
+- Dimensions are upserted by Amazon native IDs...
 
 ## Local run
 
