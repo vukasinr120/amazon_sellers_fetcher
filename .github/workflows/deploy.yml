@@ -75,7 +75,8 @@ jobs:
                   amazon-lwa-client-id="${{ secrets.AMAZON_LWA_CLIENT_ID }}" \
                   amazon-lwa-client-secret="${{ secrets.AMAZON_LWA_CLIENT_SECRET }}" \
                   amazon-titancards-refresh-token="${{ secrets.AMAZON_TITANCARDS_REFRESH_TOKEN }}" \
-                  amazon-titancards-seller-id="${{ secrets.AMAZON_TITANCARDS_SELLER_ID }}"
+                  amazon-titancards-seller-id="${{ secrets.AMAZON_TITANCARDS_SELLER_ID }}" \
+                  amazon-accounts-json='${{ secrets.AMAZON_ACCOUNTS_JSON }}'
 
               az containerapp job update \
                 --name "$JOB_NAME" \
@@ -98,6 +99,7 @@ jobs:
                   AMAZON_LWA_CLIENT_SECRET=secretref:amazon-lwa-client-secret \
                   AMAZON_TITANCARDS_REFRESH_TOKEN=secretref:amazon-titancards-refresh-token \
                   AMAZON_TITANCARDS_SELLER_ID=secretref:amazon-titancards-seller-id \
+                  AMAZON_ACCOUNTS_JSON=secretref:amazon-accounts-json \
                   RUN_STEPS=sync_accounts,sync_marketplaces,ingest_orders
             else
               az containerapp job create \
@@ -125,6 +127,7 @@ jobs:
                   amazon-lwa-client-secret="${{ secrets.AMAZON_LWA_CLIENT_SECRET }}" \
                   amazon-titancards-refresh-token="${{ secrets.AMAZON_TITANCARDS_REFRESH_TOKEN }}" \
                   amazon-titancards-seller-id="${{ secrets.AMAZON_TITANCARDS_SELLER_ID }}" \
+                  amazon-accounts-json='${{ secrets.AMAZON_ACCOUNTS_JSON }}' \
                 --env-vars \
                   SQL_SERVER=secretref:sql-server \
                   SQL_DATABASE=secretref:sql-database \
@@ -135,5 +138,6 @@ jobs:
                   AMAZON_LWA_CLIENT_SECRET=secretref:amazon-lwa-client-secret \
                   AMAZON_TITANCARDS_REFRESH_TOKEN=secretref:amazon-titancards-refresh-token \
                   AMAZON_TITANCARDS_SELLER_ID=secretref:amazon-titancards-seller-id \
+                  AMAZON_ACCOUNTS_JSON=secretref:amazon-accounts-json \
                   RUN_STEPS=sync_accounts,sync_marketplaces,ingest_orders
             fi
